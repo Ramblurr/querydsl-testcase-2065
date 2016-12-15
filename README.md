@@ -1,6 +1,19 @@
 # Test case for QueryDSL [#2065](https://github.com/querydsl/querydsl/issues/2065)
 
-## Summary
+## How to run
+
+This test case uses spring-boot and an in memory H2 database.
+
+Requires:
+* Java 8
+
+```shell
+   ./gradlew --info clean test
+```
+
+Then view the generated JPQL and SQL that is output to the console. It matches the description of the bug below.
+
+## Bug Summary
 
 Incorrect WHERE clause is generated for child-objects in an inheritance hierarchy *that share a field of the same name*
 
