@@ -1,0 +1,86 @@
+buildscript {
+    ext {
+        springBootVersion = '1.4.2.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+plugins {
+    id "com.ewerk.gradle.plugins.querydsl" version "1.0.7"
+    id 'io.franzbecker.gradle-lombok' version '1.8'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+
+jar {
+    baseName = 'testcase'
+    version = '0.0.1-SNAPSHOT'
+}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    // exclude old Hamcrest library in favor of newer 2.0.0.0 version
+    all*.exclude group: 'org.hamcrest', module: 'hamcrest-library'
+    all*.exclude group: 'org.hamcrest', module: 'hamcrest-core'
+}
+
+dependencies {
+    compileOnly('org.projectlombok:lombok')
+
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.boot:spring-boot-starter-jdbc')
+    compile('com.querydsl:querydsl-jpa:4.1.4')
+    compile('com.querydsl:querydsl-apt:4.1.4')
+    runtime('com.h2database:h2')
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('org.hamcrest:hamcrest-junit:2.0.0.0')
+}
+
+// querydsl models are generated into build directory, such that they are cleaned too, when project
+// is cleaned. Also, they are ignored in git, which is desirable.
+def generatedSourcesDir = "$buildDir/generated-sources/apt"
+
+querydsl {
+    querydslSourcesDir = generatedSourcesDir
+    jpa = true
+    querydslDefault = true
+}
+
+// This makes lombok and querydsl play nicely together
+project.afterEvaluate {
+
+    project.tasks.compileQuerydsl.options.compilerArgs = [
+            "-proc:only",
+            "-processor", project.querydsl.processors() +
+                    ',lombok.launch.AnnotationProcessorHider$AnnotationProcessor'
+    ]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir generatedSourcesDir
+        }
+    }
+}
+
+idea {
+    module {
+        generatedSourceDirs += file(generatedSourcesDir)
+        downloadSources = true
+    }
+}
